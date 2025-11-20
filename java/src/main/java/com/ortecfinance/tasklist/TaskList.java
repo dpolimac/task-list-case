@@ -13,64 +13,24 @@ public final class TaskList {
     }
 
 
-
-    public TaskList(BufferedReader reader, PrintWriter writer) {
-        this.in = reader;
-        this.out = writer;
-    }
-
-    public void run() {
-        out.println("Welcome to TaskList! Type 'help' for available commands.");
-        while (true) {
-            out.print("> ");
-            out.flush();
-            String command;
-            try {
-                command = in.readLine();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (command.equals(QUIT)) {
-                break;
-            }
-            execute(command);
-        }
-    }
-
-
     /**
-     * Adds or updates the deadline for a given task based on its ID.
-     * The command should include the task ID and the deadline in the format "dd-MM-yyyy".
-     * If the task ID is found, the corresponding task's deadline will be updated;
-     * otherwise the method outputs "No task with the given ID was found."
+     * Adds or updates the deadline for a task with the specified ID.
      *
-     * @param commandLine the input string containing the task ID and deadline,
-     *                    separated by a space, e.g. "1 25-12-2023".
-     *                    The first part represents the task ID (an integer),
-     *                    and the second part represents the deadline (dd-MM-yyyy).
-     * @throws RuntimeException if the date format specified in the commandLine is invalid.
+     * @param id the unique identifier of the task to be updated
+     * @param deadline the new deadline to be set for the task
+     * @return true if the task is found and the deadline is successfully updated,
+     *         false if no task with the specified ID exists
      */
-    void addDeadline(String commandLine) {
-        String[] subcommandRest = commandLine.split(" ", 2);
-        int id = Integer.parseInt(subcommandRest[0]);
-        Date deadline;
-
-        try {
-            deadline = formatter.parse(subcommandRest[1]);
-        } catch (ParseException e) {
-            out.println("Invalid date format.");
-            throw new RuntimeException(e);  // Not sure if throwing an exception is the best way to handle this (?)
-        }
-
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+    public boolean addDeadline(int id, Date deadline) {
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
             for (Task task : project.getValue()) {
                 if (task.getId() == id) {
                     task.setDeadline(deadline);
-                    return;
+                    return true;
                 }
             }
         }
-        out.println("No task with the given ID was found.");
+        return false;
     }
 
     /**
