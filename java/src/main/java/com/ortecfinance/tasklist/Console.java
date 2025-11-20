@@ -198,6 +198,25 @@ public class Console implements Runnable {
         }
     }
 
+    /**
+     * Prints the list of projects and their associated tasks in a formatted manner.
+     * Each project title is displayed followed by its tasks, where each task includes its ID and description.
+     *
+     * @param projects a map where the keys represent project names as strings,
+     *                 and the values are lists of associated tasks.
+     */
+    private void printProject(Map<String, List<Task>> projects) {
+        if (!projects.isEmpty()) {
+            List<String> projectNames = new ArrayList<>(projects.keySet());
+            Collections.sort(projectNames);
+            for (String projectName : projectNames) {
+                out.printf("     %s:%n", projectName);
+                for (Task task : projects.get(projectName)) {
+                    out.printf("       \t%d: %s%n", task.getId(), task.getDescription());
+                }
+            }
+        }
+    }
 
     /**
      * Displays the list of available commands for the console application.
