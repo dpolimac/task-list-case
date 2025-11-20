@@ -143,6 +143,34 @@ public class Console implements Runnable {
         }
     }
 
+    /**
+     * Displays either all tasks or tasks with their deadline today, depending on the argument passed.
+     *
+     * @param args the input command specifying the type of tasks to display.
+     *             Acceptable values are:
+     *             - "today": Displays tasks due today.
+     *             - "show": Displays all projects and their associated tasks.
+     *             If the argument is invalid, an error message is printed.
+     */
+    private void displayHandler(String args) {
+        Map<String, List<Task>> projects;
+
+        if ("today".equals(args)) {
+            projects = taskList.getTodaysTasks();
+        } else if ("show".equals(args)) {
+            projects = taskList.getAllProjects();
+        } else {
+            error(args);
+            return;
+        }
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
+            out.println(project.getKey());
+            for (Task task : project.getValue()) {
+                out.printf("    [%c] %d: %s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
+            }
+            out.println();
+        }
+    }
 
     /**
      * Displays the list of available commands for the console application.
