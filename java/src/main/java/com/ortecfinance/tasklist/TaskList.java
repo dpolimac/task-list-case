@@ -151,53 +151,27 @@ public final class TaskList {
         List<Task> projectTasks = projects.get(project);
         return projectTasks.add(new Task(nextId(), description, false));
     }
-        List<Task> projectTasks = tasks.get(project);
-        if (projectTasks == null) {
-            out.printf("Could not find a project with the name \"%s\".", project);
-            out.println();
-            return;
-        }
-        projectTasks.add(new Task(nextId(), description, false));
-    }
 
-    private void check(String idString) {
-        setDone(idString, true);
-    }
-
-    private void uncheck(String idString) {
-        setDone(idString, false);
-    }
-
-    private void setDone(String idString, boolean done) {
-        int id = Integer.parseInt(idString);
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+    /**
+     * Updates the "done" status of a task with the specified ID.
+     * Iterates through all projects and tasks to locate the task with the given ID,
+     * then updates its status to the specified value.
+     *
+     * @param id the unique identifier of the task whose status is to be updated
+     * @param done the new "done" status to be set for the task
+     * @return true if the task is found and its status is successfully updated,
+     *         false if no task with the specified ID exists
+     */
+    public boolean setDone(int id, boolean done) {
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
             for (Task task : project.getValue()) {
                 if (task.getId() == id) {
                     task.setDone(done);
-                    return;
+                    return true;
                 }
             }
         }
-        out.printf("Could not find a task with an ID of %d.", id);
-        out.println();
-    }
-
-    private void help() {
-        out.println("Commands:");
-        out.println("  show");
-        out.println("  today");
-        out.println("  view-by-deadline");
-        out.println("  add project <project name>");
-        out.println("  add task <project name> <task description>");
-        out.println("  check <task ID>");
-        out.println("  uncheck <task ID>");
-        out.println("  deadline <task ID> <date>");
-        out.println();
-    }
-
-    private void error(String command) {
-        out.printf("I don't know what the command \"%s\" is.", command);
-        out.println();
+        return false;
     }
 
     private long nextId() {
