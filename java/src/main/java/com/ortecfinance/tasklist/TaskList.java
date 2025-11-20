@@ -55,6 +55,9 @@ public final class TaskList implements Runnable {
             case "deadline":    // Added
                 addDeadline(commandRest[1]);
                 break;
+            case "today":       // Added
+                today();
+                break;
             case "show":
                 show();
                 break;
@@ -111,6 +114,43 @@ public final class TaskList implements Runnable {
         out.println("No task with the given ID was found.");
     }
 
+    /**
+     * Displays all tasks from each project that have a deadline matching today's date.
+     * If there are no projects with tasks due today's deadline, the method prints nothing.
+     *
+     * Each project name with matching tasks is printed, followed by the details of the tasks:
+     * - Task ID
+     * - Task description
+     * - Completion status (checked or unchecked)
+     */
+    void today() {
+        String today = formatter.format(new Date());
+
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+            String projectName = project.getKey();
+            List<Task> projectTasks = project.getValue();
+            List<Task> todaysTasks = new ArrayList<>();
+
+            for (Task task : projectTasks) {
+                Date deadline = task.getDeadline();
+                if (deadline != null && formatter.format(deadline).equals(today)) {
+                    todaysTasks.add(task);
+                }
+            }
+
+            if (!todaysTasks.isEmpty()) {
+                out.println(projectName);
+                for (Task task : todaysTasks) {
+                    out.printf("    [%c] %d: %s%n",
+                            (task.isDone() ? 'x' : ' '),
+                            task.getId(),
+                            task.getDescription());
+                }
+                out.println();
+            }
+        }
+    }
+
     private void show() {
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             out.println(project.getKey());
@@ -133,7 +173,7 @@ public final class TaskList implements Runnable {
     }
 
     private void addProject(String name) {
-        tasks.put(name, new ArrayList<Task>());
+        tasks.put(name.trim(), new ArrayList<>());
     }
 
     private void addTask(String project, String description) {
@@ -171,6 +211,7 @@ public final class TaskList implements Runnable {
     private void help() {
         out.println("Commands:");
         out.println("  show");
+        out.println("  today");
         out.println("  add project <project name>");
         out.println("  add task <project name> <task description>");
         out.println("  check <task ID>");
