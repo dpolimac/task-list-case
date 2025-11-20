@@ -9,7 +9,7 @@ public class TaskListApplication {
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("Starting console Application");
-            TaskList.startConsole();
+            Console.startConsole();
         }
         else {
             SpringApplication.run(TaskListApplication.class, args);
