@@ -43,31 +43,26 @@ public final class TaskList {
         Map<String, List<Task>> allProjects = new LinkedHashMap<>(projects);
         return Collections.unmodifiableMap(allProjects);
     }
-        String today = formatter.format(new Date());
 
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            String projectName = project.getKey();
-            List<Task> projectTasks = project.getValue();
-            List<Task> todaysTasks = new ArrayList<>();
-
-            for (Task task : projectTasks) {
+    /**
+     * Retrieves a map of consisting only of tasks with deadlines
+     * matching today's date grouped by their associated project.
+     *
+     * @return an immutable map where the key is the project name (as a string)
+     *         and the value is a list containing tasks due today for that project.
+     */
+    public Map<String, List<Task>> getTodaysTasks() {
+        Map<String, List<Task>> todaysTasks = new LinkedHashMap<>();
+        String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
+            for (Task task : project.getValue()) {
                 Date deadline = task.getDeadline();
-                if (deadline != null && formatter.format(deadline).equals(today)) {
-                    todaysTasks.add(task);
+                if (deadline != null && deadline.toString().equals(today)) {
+                    todaysTasks.put(project.getKey(), Collections.singletonList(task));
                 }
-            }
-
-            if (!todaysTasks.isEmpty()) {
-                out.println(projectName);
-                for (Task task : todaysTasks) {
-                    out.printf("    [%c] %d: %s%n",
-                            (task.isDone() ? 'x' : ' '),
-                            task.getId(),
-                            task.getDescription());
-                }
-                out.println();
             }
         }
+        return Collections.unmodifiableMap(todaysTasks);
     }
 
     /**
