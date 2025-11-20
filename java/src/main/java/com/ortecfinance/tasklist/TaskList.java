@@ -55,6 +55,9 @@ public final class TaskList implements Runnable {
             case "deadline":    // Added
                 addDeadline(commandRest[1]);
                 break;
+            case "view-by-deadline":    // Added
+                viewByDeadline();
+                break;
             case "today":       // Added
                 today();
                 break;
@@ -151,6 +154,109 @@ public final class TaskList implements Runnable {
         }
     }
 
+    /**
+     * Organizes tasks into a structure based on their deadlines, and their projects.
+     *
+     * @param tasksByDeadline a map where tasks are grouped by their deadlines and projects, respectively.
+     * @param noDeadlineTasks a list that collects tasks that do not have a deadline specified.
+     */
+    private void groupTasks(Map<Date, Map<String, List<Task>>> tasksByDeadline,
+                                    Map<String, List<Task>> noDeadlineTasks) {
+        // Iterate over all the projects, their tasks and their respective deadlines
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+            for (Task task : project.getValue()) {
+                Date deadline = task.getDeadline();
+                if (deadline == null) {
+                    if (!noDeadlineTasks.containsKey(project.getKey())) {
+                        noDeadlineTasks.put(project.getKey(), new ArrayList<>());
+                    }
+                    noDeadlineTasks.get(project.getKey()).add(task);
+                } else {
+                    // If the deadline was not recorded before
+                    if (!tasksByDeadline.containsKey(deadline)) {
+                        tasksByDeadline.put(deadline, new LinkedHashMap<>());
+                    }
+                    // If the given deadline does not include the encountered project
+                    if (!tasksByDeadline.get(deadline).containsKey(project.getKey())) {
+                        tasksByDeadline.get(deadline).put(project.getKey(), new ArrayList<>());
+                    }
+                    // Add the task to the given project under the given deadline
+                    tasksByDeadline.get(deadline).get(project.getKey()).add(task);
+                }
+            }
+        }
+    }
+
+    /**
+     * Prints a list of tasks grouped by their deadlines and project names, respectively.
+     * Each deadline is displayed in ascending order along with the projects and associated tasks for that date.
+     *
+     * @param tasksByDeadline a map where keys are deadlines (Date objects) and values are maps of projects.
+     *                        Each project map has project names as keys and corresponding task lists as values.
+     */
+    private void printDeadlines(Map<Date, Map<String, List<Task>>> tasksByDeadline,
+                                Map<String, List<Task>> noDeadlineTasks) {
+        // Sort by deadlines
+        List<Date> sortedDeadlines = new ArrayList<>(tasksByDeadline.keySet());
+        sortedDeadlines.sort(Comparator.naturalOrder());
+
+        // Printing tasks with a deadline
+        for (Date deadline : sortedDeadlines) {
+            String formattedDeadline = formatter.format(deadline);
+            out.println(formattedDeadline + ":");
+            Map<String, List<Task>> projectsForDate = tasksByDeadline.get(deadline);
+            printProject(projectsForDate);
+        }
+
+        // Print tasks without a deadline
+        if (!noDeadlineTasks.isEmpty()) {
+            out.println("No deadline:");
+            printProject(noDeadlineTasks);
+        }
+    }
+
+
+    /**
+     * Collects tasks grouped by their deadlines and projects, then prints the organized tasks.
+     *
+     * This method categorizes all tasks into two groups:
+     * 1. Tasks with specific deadlines, organized by them and their corresponding projects.
+     * 2. Tasks with no specified deadlines.
+     *
+     * First {@code getTasksByDeadline} is used to structure tasks based on their deadlines and projects.
+     * Tasks without a deadline are added to a separate list.
+     *
+     * Tasks with deadlines are printed using {@code printDeadlines},
+     * while tasks without deadlines are printed using {@code printNoDeadlines}.
+     */
+    private void viewByDeadline() {
+        Map<Date, Map<String, List<Task>>> tasksByDeadline = new LinkedHashMap<>();
+        Map<String, List<Task>> noDeadlineTasks = new LinkedHashMap<>();
+
+        groupTasks(tasksByDeadline, noDeadlineTasks);
+        printDeadlines(tasksByDeadline, noDeadlineTasks);
+    }
+
+    /**
+     * Prints a list of tasks grouped by their project names.
+     * The projects are sorted alphabetically, and tasks are displayed for each project.
+     *
+     * @param projects a map where the key is the project name (as a String)
+     *                 and the value is a list of tasks (List<Task>) associated with the project.
+     */
+    private void printProject(Map<String, List<Task>> projects) {
+        if (!projects.isEmpty()) {
+            List<String> projectNames = new ArrayList<>(projects.keySet());
+            Collections.sort(projectNames);
+            for (String projectName : projectNames) {
+                out.printf("     %s:%n", projectName);
+                for (Task task : projects.get(projectName)) {
+                    out.printf("       \t%d: %s%n", task.getId(), task.getDescription());
+                }
+            }
+        }
+    }
+
     private void show() {
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             out.println(project.getKey());
@@ -212,6 +318,7 @@ public final class TaskList implements Runnable {
         out.println("Commands:");
         out.println("  show");
         out.println("  today");
+        out.println("  view-by-deadline");
         out.println("  add project <project name>");
         out.println("  add task <project name> <task description>");
         out.println("  check <task ID>");
