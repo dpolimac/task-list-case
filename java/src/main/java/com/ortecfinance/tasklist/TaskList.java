@@ -1,28 +1,18 @@
 package com.ortecfinance.tasklist;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public final class TaskList implements Runnable {
-    private static final String QUIT = "quit";
+public final class TaskList {
 
-    private final Map<String, List<Task>> tasks = new LinkedHashMap<>();
-    private final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
-    private final BufferedReader in;
-    private final PrintWriter out;
-
+    private final Map<String, List<Task>> projects;
     private long lastId = 0;
 
-    public static void startConsole() {
-        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-        PrintWriter out = new PrintWriter(System.out);
-        new TaskList(in, out).run();
+    public TaskList() {
+        this.projects = new LinkedHashMap<>();
     }
+
+
 
     public TaskList(BufferedReader reader, PrintWriter writer) {
         this.in = reader;
@@ -47,39 +37,6 @@ public final class TaskList implements Runnable {
         }
     }
 
-    private void execute(String commandLine) {
-        String[] commandRest = commandLine.split(" ", 2);
-        String command = commandRest[0];
-        switch (command) {
-            case "deadline":    // Added
-                addDeadline(commandRest[1]);
-                break;
-            case "view-by-deadline":    // Added
-                viewByDeadline();
-                break;
-            case "today":       // Added
-                today();
-                break;
-            case "show":
-                show();
-                break;
-            case "add":
-                add(commandRest[1]);
-                break;
-            case "check":
-                check(commandRest[1]);
-                break;
-            case "uncheck":
-                uncheck(commandRest[1]);
-                break;
-            case "help":
-                help();
-                break;
-            default:
-                error(command);
-                break;
-        }
-    }
 
     /**
      * Adds or updates the deadline for a given task based on its ID.
