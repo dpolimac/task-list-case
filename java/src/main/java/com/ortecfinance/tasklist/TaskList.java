@@ -111,6 +111,7 @@ public final class TaskList implements Runnable {
         out.println("No task with the given ID was found.");
     }
 
+    private void show() {
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             out.println(project.getKey());
             for (Task task : project.getValue()) {
