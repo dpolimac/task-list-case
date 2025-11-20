@@ -66,66 +66,46 @@ public final class TaskList {
     }
 
     /**
-     * Organizes tasks into a structure based on their deadlines, and their projects.
+     * Retrieves all tasks grouped by their deadlines and projects, in that order.
      *
-     * @param tasksByDeadline a map where tasks are grouped by their deadlines and projects, respectively.
-     * @param noDeadlineTasks a list that collects tasks that do not have a deadline specified.
+     * @return an immutable map where the key is the deadline date,
+     *         the value is an immutable map of project names to an
+     *         immutable list of tasks associated with that deadline.
      */
-    private void groupTasks(Map<Date, Map<String, List<Task>>> tasksByDeadline,
-                                    Map<String, List<Task>> noDeadlineTasks) {
+    public Map<Date, Map<String, List<Task>>> getTasksByDeadline() {
+        Map<Date, Map<String, List<Task>>> projectsByDeadline = new LinkedHashMap<>();
         // Iterate over all the projects, their tasks and their respective deadlines
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
             for (Task task : project.getValue()) {
                 Date deadline = task.getDeadline();
-                if (deadline == null) {
-                    if (!noDeadlineTasks.containsKey(project.getKey())) {
-                        noDeadlineTasks.put(project.getKey(), new ArrayList<>());
-                    }
-                    noDeadlineTasks.get(project.getKey()).add(task);
-                } else {
+                if (deadline != null) {
                     // If the deadline was not recorded before
-                    if (!tasksByDeadline.containsKey(deadline)) {
-                        tasksByDeadline.put(deadline, new LinkedHashMap<>());
+                    if (!projectsByDeadline.containsKey(deadline)) {
+                        projectsByDeadline.put(deadline, new LinkedHashMap<>());
                     }
                     // If the given deadline does not include the encountered project
-                    if (!tasksByDeadline.get(deadline).containsKey(project.getKey())) {
-                        tasksByDeadline.get(deadline).put(project.getKey(), new ArrayList<>());
+                    if (!projectsByDeadline.get(deadline).containsKey(project.getKey())) {
+                        projectsByDeadline.get(deadline).put(project.getKey(), new ArrayList<>());
                     }
                     // Add the task to the given project under the given deadline
-                    tasksByDeadline.get(deadline).get(project.getKey()).add(task);
+                    projectsByDeadline.get(deadline).get(project.getKey()).add(task);
                 }
             }
         }
-    }
-
-    /**
-     * Prints a list of tasks grouped by their deadlines and project names, respectively.
-     * Each deadline is displayed in ascending order along with the projects and associated tasks for that date.
-     *
-     * @param tasksByDeadline a map where keys are deadlines (Date objects) and values are maps of projects.
-     *                        Each project map has project names as keys and corresponding task lists as values.
-     */
-    private void printDeadlines(Map<Date, Map<String, List<Task>>> tasksByDeadline,
-                                Map<String, List<Task>> noDeadlineTasks) {
-        // Sort by deadlines
-        List<Date> sortedDeadlines = new ArrayList<>(tasksByDeadline.keySet());
+        // Sort deadlines in ascending order
+        List<Date> sortedDeadlines = new ArrayList<>(projectsByDeadline.keySet());
         sortedDeadlines.sort(Comparator.naturalOrder());
+        Map<Date, Map<String, List<Task>>> sortedTasks = new LinkedHashMap<>();
 
-        // Printing tasks with a deadline
         for (Date deadline : sortedDeadlines) {
-            String formattedDeadline = formatter.format(deadline);
-            out.println(formattedDeadline + ":");
-            Map<String, List<Task>> projectsForDate = tasksByDeadline.get(deadline);
-            printProject(projectsForDate);
+            Map<String, List<Task>> projectsCopy = new LinkedHashMap<>();
+            for (Map.Entry<String, List<Task>> e : projectsByDeadline.get(deadline).entrySet()) {
+                projectsCopy.put(e.getKey(), List.copyOf(e.getValue()));
+            }
+            sortedTasks.put(deadline, Collections.unmodifiableMap(projectsCopy));
         }
-
-        // Print tasks without a deadline
-        if (!noDeadlineTasks.isEmpty()) {
-            out.println("No deadline:");
-            printProject(noDeadlineTasks);
-        }
+        return Collections.unmodifiableMap(sortedTasks);
     }
-
 
     /**
      * Collects tasks grouped by their deadlines and projects, then prints the organized tasks.
