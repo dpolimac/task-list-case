@@ -13,6 +13,7 @@ public final class TaskList implements Runnable {
     private static final String QUIT = "quit";
 
     private final Map<String, List<Task>> tasks = new LinkedHashMap<>();
+    private final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
     private final BufferedReader in;
     private final PrintWriter out;
 
@@ -51,6 +52,9 @@ public final class TaskList implements Runnable {
         String[] commandRest = commandLine.split(" ", 2);
         String command = commandRest[0];
         switch (command) {
+            case "deadline":    // Added
+                addDeadline(commandRest[1]);
+                break;
             case "show":
                 show();
                 break;
@@ -72,7 +76,41 @@ public final class TaskList implements Runnable {
         }
     }
 
-    private void show() {
+    /**
+     * Adds or updates the deadline for a given task based on its ID.
+     * The command should include the task ID and the deadline in the format "dd-MM-yyyy".
+     * If the task ID is found, the corresponding task's deadline will be updated;
+     * otherwise the method outputs "No task with the given ID was found."
+     *
+     * @param commandLine the input string containing the task ID and deadline,
+     *                    separated by a space, e.g. "1 25-12-2023".
+     *                    The first part represents the task ID (an integer),
+     *                    and the second part represents the deadline (dd-MM-yyyy).
+     * @throws RuntimeException if the date format specified in the commandLine is invalid.
+     */
+    void addDeadline(String commandLine) {
+        String[] subcommandRest = commandLine.split(" ", 2);
+        int id = Integer.parseInt(subcommandRest[0]);
+        Date deadline;
+
+        try {
+            deadline = formatter.parse(subcommandRest[1]);
+        } catch (ParseException e) {
+            out.println("Invalid date format.");
+            throw new RuntimeException(e);  // Not sure if throwing an exception is the best way to handle this (?)
+        }
+
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+            for (Task task : project.getValue()) {
+                if (task.getId() == id) {
+                    task.setDeadline(deadline);
+                    return;
+                }
+            }
+        }
+        out.println("No task with the given ID was found.");
+    }
+
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             out.println(project.getKey());
             for (Task task : project.getValue()) {
