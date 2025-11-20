@@ -108,49 +108,26 @@ public final class TaskList {
     }
 
     /**
-     * Collects tasks grouped by their deadlines and projects, then prints the organized tasks.
+     * Retrieves a map of tasks that do not have a deadline, grouped by their associated project names.
      *
-     * This method categorizes all tasks into two groups:
-     * 1. Tasks with specific deadlines, organized by them and their corresponding projects.
-     * 2. Tasks with no specified deadlines.
-     *
-     * First {@code getTasksByDeadline} is used to structure tasks based on their deadlines and projects.
-     * Tasks without a deadline are added to a separate list.
-     *
-     * Tasks with deadlines are printed using {@code printDeadlines},
-     * while tasks without deadlines are printed using {@code printNoDeadlines}.
+     * @return an immutable map where the key is the project name (as a string)
+     *         and the value is a list of tasks without deadlines in that project.
      */
-    private void viewByDeadline() {
-        Map<Date, Map<String, List<Task>>> tasksByDeadline = new LinkedHashMap<>();
-        Map<String, List<Task>> noDeadlineTasks = new LinkedHashMap<>();
-
-        groupTasks(tasksByDeadline, noDeadlineTasks);
-        printDeadlines(tasksByDeadline, noDeadlineTasks);
-    }
-
-    /**
-     * Prints a list of tasks grouped by their project names.
-     * The projects are sorted alphabetically, and tasks are displayed for each project.
-     *
-     * @param projects a map where the key is the project name (as a String)
-     *                 and the value is a list of tasks (List<Task>) associated with the project.
-     */
-    private void printProject(Map<String, List<Task>> projects) {
-        if (!projects.isEmpty()) {
-            List<String> projectNames = new ArrayList<>(projects.keySet());
-            Collections.sort(projectNames);
-            for (String projectName : projectNames) {
-                out.printf("     %s:%n", projectName);
-                for (Task task : projects.get(projectName)) {
-                    out.printf("       \t%d: %s%n", task.getId(), task.getDescription());
+    public Map<String, List<Task>> getTasksWithoutDeadline() {
+        Map<String, List<Task>> noDeadlineTasks = new TreeMap<>();
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
+            List<Task> projectTasks = new ArrayList<>();
+            for (Task task : project.getValue()) {
+                if (task.getDeadline() == null) {
+                    projectTasks.add(task);
                 }
             }
+            if (!projectTasks.isEmpty()) {
+                noDeadlineTasks.put(project.getKey(), projectTasks);
+            }
         }
+        return Collections.unmodifiableMap(noDeadlineTasks);
     }
-
-    private void show() {
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            out.println(project.getKey());
             for (Task task : project.getValue()) {
                 out.printf("    [%c] %d: %s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
             }
