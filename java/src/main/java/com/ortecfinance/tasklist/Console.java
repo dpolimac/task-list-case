@@ -112,6 +112,37 @@ public class Console implements Runnable {
         }
     }
 
+    /**
+     * Handles the addition or update of a deadline (Date) for a specific task identified by its ID (integer).
+     *
+     * @param args a string containing the task ID and the deadline, separated by a space.
+     *             The deadline must follow the format "dd-MM-yyyy".
+     * @throws RuntimeException if the task ID is not a valid number.
+     * @throws RuntimeException if the deadline format is invalid.
+     */
+    private void handleDeadline(String args) {
+        String[] subcommand = args.split(" ", 2);
+        int id;
+        try {
+            id = Integer.parseInt(subcommand[0]);
+        } catch (NumberFormatException e) {
+            out.println("Invalid task ID.");
+            throw new RuntimeException(e);
+        }
+        Date deadline;
+        try {
+            deadline = formatter.parse(subcommand[1]);
+        } catch (java.text.ParseException e) {
+            out.println("Invalid deadline format. Expected format: dd-MM-yyyy.");
+            throw new RuntimeException(e);
+        }
+
+        boolean isAdded = taskList.addDeadline(id, deadline);
+        if (!isAdded) {
+            out.println("No task with the given ID was found.");
+        }
+    }
+
 
     /**
      * Displays the list of available commands for the console application.
