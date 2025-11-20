@@ -88,6 +88,32 @@ public class Console implements Runnable {
     }
 
     /**
+     * Marks a task as completed or not completed based on the provided a valid task ID and status.
+     *
+     * @param args the input string containing the task ID (integer).
+     * @param checked the status to set for the specified task (boolean).
+     * @throws RuntimeException if the task ID is not a valid number.
+     */
+    private void handleCheck(String args, boolean checked) {
+        if (args.isEmpty()) {
+            out.println("Invalid command format. Expected format: check <task ID>");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(args);
+            boolean isChecked = taskList.setDone(id, checked);
+            if (!isChecked) {
+                out.println("No task with the given ID was found.");
+            }
+        } catch (NumberFormatException e) {
+            out.println("Invalid task ID.");
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
      * Displays the list of available commands for the console application.
      */
     private void help() {
