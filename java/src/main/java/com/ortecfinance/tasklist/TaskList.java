@@ -34,15 +34,15 @@ public final class TaskList {
     }
 
     /**
-     * Displays all tasks from each project that have a deadline matching today's date.
-     * If there are no projects with tasks due today's deadline, the method prints nothing.
+     * Retrieves all projects and their associated tasks.
      *
-     * Each project name with matching tasks is printed, followed by the details of the tasks:
-     * - Task ID
-     * - Task description
-     * - Completion status (checked or unchecked)
+     * @return an immutable map where the key is the project name (as a string) and the value is
+     *         a list of tasks associated with the project.
      */
-    void today() {
+    public Map<String, List<Task>> getAllProjects() {
+        Map<String, List<Task>> allProjects = new LinkedHashMap<>(projects);
+        return Collections.unmodifiableMap(allProjects);
+    }
         String today = formatter.format(new Date());
 
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
