@@ -173,6 +173,33 @@ public class Console implements Runnable {
     }
 
     /**
+     * Displays tasks in order of their deadlines, where each task is grouped by its project.
+     * Tasks with no deadline are displayed at the end in a "No deadline" block.
+     *
+     * - Retrieves tasks with deadlines using {@code taskList.getTasksByDeadline()}.
+     * - Retrieves tasks without deadlines using {@code taskList.getTasksWithoutDeadline()}.
+     * - Formats and displays the tasks by invoking {@code printProject()}.
+     */
+    private void viewByDeadline() {
+        Map<Date, Map<String, List<Task>>> tasksByDeadline = taskList.getTasksByDeadline();
+        Map<String, List<Task>> noDeadlineTasks = taskList.getTasksWithoutDeadline();
+
+        // tasks with deadline
+        for (Map.Entry<Date, Map<String, List<Task>>> entry : tasksByDeadline.entrySet()) {
+            String dateString = formatter.format(entry.getKey());
+            out.println(dateString + ":");
+            printProject(entry.getValue());
+        }
+
+        // "No deadline" block at the end
+        if (!noDeadlineTasks.isEmpty()) {
+            out.println("No deadline:");
+            printProject(noDeadlineTasks);
+        }
+    }
+
+
+    /**
      * Displays the list of available commands for the console application.
      */
     private void help() {
