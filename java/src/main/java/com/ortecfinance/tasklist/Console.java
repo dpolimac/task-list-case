@@ -64,6 +64,30 @@ public class Console implements Runnable {
     }
 
     /**
+     * Handles the addition of a project or task based on the given input arguments.
+     *
+     * @param args the input string containing the command and its arguments.
+     *             Expected format: "add project <project name>" to add a project,
+     *             or "add task <project name> <task description>" to add a task to a project.
+     */
+    private void handleAdd(String args) {
+        String[] subcommand = args.split(" ", 2);
+        if ("project".equals(subcommand[0])) {
+            taskList.addProject(subcommand[1]);
+        } else if ("task".equals(subcommand[0])) {
+            String[] projectTask = subcommand[1].split(" ", 2);
+            if (projectTask.length < 2) {
+                out.println("Invalid command format. Expected format: add task <project name> <task description>");
+                return;
+            }
+            boolean isAdded = taskList.addTask(projectTask[0], projectTask[1]);
+            if (!isAdded) {
+                out.println("No project with the given name was found.");
+            }
+        }
+    }
+
+    /**
      * Displays the list of available commands for the console application.
      */
     private void help() {
