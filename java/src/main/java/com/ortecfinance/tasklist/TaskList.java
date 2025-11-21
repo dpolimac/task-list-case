@@ -1,8 +1,9 @@
 package com.ortecfinance.tasklist;
 
-import java.text.SimpleDateFormat;
+import org.springframework.stereotype.Component;
 import java.util.*;
 
+@Component
 public final class TaskList {
 
     private final Map<String, List<Task>> projects;
