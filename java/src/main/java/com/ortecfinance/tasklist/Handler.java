@@ -1,4 +1,218 @@
 package com.ortecfinance.tasklist;
 
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 public class Handler {
+
+    private final TaskList taskList;
+    private final PrintWriter out;
+    private final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+
+    public Handler(TaskList taskList, PrintWriter out) {
+        this.taskList = taskList;
+        this.out = out;
+    }
+
+    public void execute(String commandLine) {
+        String[] commandRest = commandLine.split(" ", 2);
+        String command = commandRest[0];
+        switch (command) {
+            case "show", "today" -> displayHandler(commandRest[0]);
+            case "deadline" -> handleDeadline(commandRest[1]);
+            case "view-by-deadline" -> viewByDeadline();
+            case "add" -> handleAdd(commandRest[1]);
+            case "check" -> handleCheck(commandRest[1], true);
+            case "uncheck" -> handleCheck(commandRest[1], false);
+            case "help" -> help();
+            default -> error(command);
+        }
+    }
+
+    /**
+     * Handles the addition of a project or task based on the given input arguments.
+     *
+     * @param args the input string containing the command and its arguments.
+     *             Expected format: "add project <project name>" to add a project,
+     *             or "add task <project name> <task description>" to add a task to a project.
+     */
+    private void handleAdd(String args) {
+        String[] subcommand = args.split(" ", 2);
+        if ("project".equals(subcommand[0])) {
+            taskList.addProject(subcommand[1]);
+        } else if ("task".equals(subcommand[0])) {
+            String[] projectTask = subcommand[1].split(" ", 2);
+            if (projectTask.length < 2) {
+                out.println("Invalid command format. Expected format: add task <project name> <task description>");
+                return;
+            }
+            boolean isAdded = taskList.addTask(projectTask[0], projectTask[1]);
+            if (!isAdded) {
+                out.println("No project with the given name was found.");
+            }
+        }
+    }
+
+    /**
+     * Marks a task as completed or not completed based on the provided a valid task ID and status.
+     *
+     * @param args the input string containing the task ID (integer).
+     * @param checked the status to set for the specified task (boolean).
+     * @throws RuntimeException if the task ID is not a valid number.
+     */
+    private void handleCheck(String args, boolean checked) {
+        if (args.isEmpty()) {
+            out.println("Invalid command format. Expected format: check <task ID>");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(args);
+            boolean isChecked = taskList.setDone(id, checked);
+            if (!isChecked) {
+                out.println("No task with the given ID was found.");
+            }
+        } catch (NumberFormatException e) {
+            out.println("Invalid task ID.");
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Handles the addition or update of a deadline (Date) for a specific task identified by its ID (integer).
+     *
+     * @param args a string containing the task ID and the deadline, separated by a space.
+     *             The deadline must follow the format "dd-MM-yyyy".
+     * @throws RuntimeException if the task ID is not a valid number.
+     * @throws RuntimeException if the deadline format is invalid.
+     */
+    private void handleDeadline(String args) {
+        String[] subcommand = args.split(" ", 2);
+        int id;
+        try {
+            id = Integer.parseInt(subcommand[0]);
+        } catch (NumberFormatException e) {
+            out.println("Invalid task ID.");
+            throw new RuntimeException(e);
+        }
+        Date deadline;
+        try {
+            deadline = formatter.parse(subcommand[1]);
+        } catch (java.text.ParseException e) {
+            out.println("Invalid deadline format. Expected format: dd-MM-yyyy.");
+            throw new RuntimeException(e);
+        }
+
+        boolean isAdded = taskList.addDeadline(id, deadline);
+        if (!isAdded) {
+            out.println("No task with the given ID was found.");
+        }
+    }
+
+    /**
+     * Displays either all tasks or tasks with their deadline today, depending on the argument passed.
+     *
+     * @param args the input command specifying the type of tasks to display.
+     *             Acceptable values are:
+     *             - "today": Displays tasks due today.
+     *             - "show": Displays all projects and their associated tasks.
+     *             If the argument is invalid, an error message is printed.
+     */
+    private void displayHandler(String args) {
+        Map<String, List<Task>> projects;
+
+        if ("today".equals(args)) {
+            projects = taskList.getTodaysTasks();
+        } else if ("show".equals(args)) {
+            projects = taskList.getAllProjects();
+        } else {
+            error(args);
+            return;
+        }
+        printProjectsWithStatus(projects);
+    }
+
+    /**
+     * Displays tasks in order of their deadlines, where each task is grouped by its project.
+     * Tasks with no deadline are displayed at the end in a "No deadline" block.
+     *
+     * - Retrieves tasks with deadlines using {@code taskList.getTasksByDeadline()}.
+     * - Retrieves tasks without deadlines using {@code taskList.getTasksWithoutDeadline()}.
+     * - Formats and displays the tasks by invoking {@code printProject()}.
+     */
+    private void viewByDeadline() {
+        Map<Date, Map<String, List<Task>>> tasksByDeadline = taskList.getTasksByDeadline();
+        Map<String, List<Task>> noDeadlineTasks = taskList.getTasksWithoutDeadline();
+
+        // tasks with deadline
+        for (Map.Entry<Date, Map<String, List<Task>>> entry : tasksByDeadline.entrySet()) {
+            String dateString = formatter.format(entry.getKey());
+            out.println(dateString + ":");
+            printProject(entry.getValue());
+        }
+
+        // "No deadline" block at the end
+        if (!noDeadlineTasks.isEmpty()) {
+            out.println("No deadline:");
+            printProject(noDeadlineTasks);
+        }
+    }
+
+    /**
+     * Prints the list of projects and their associated tasks in a formatted manner.
+     * Each project title is displayed followed by its tasks, where each task includes its ID and description.
+     *
+     * @param projects a map where the keys represent project names as strings,
+     *                 and the values are lists of associated tasks.
+     */
+    private void printProject(Map<String, List<Task>> projects) {
+        if (!projects.isEmpty()) {
+            List<String> projectNames = new ArrayList<>(projects.keySet());
+            Collections.sort(projectNames);
+            for (String projectName : projectNames) {
+                out.printf("     %s:%n", projectName);
+                for (Task task : projects.get(projectName)) {
+                    out.printf("       \t%d: %s%n", task.getId(), task.getDescription());
+                }
+            }
+        }
+    }
+
+    /**
+     * Prints all projects and their associated tasks along with their statuses.
+     *
+     * @param projects a map where the keys represent project names as strings,
+     *                 and the values are lists of associated tasks.
+     */
+    private void printProjectsWithStatus(Map<String, List<Task>> projects) {
+        for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
+            out.println(project.getKey());
+            for (Task task : project.getValue()) {
+                out.printf("    [%c] %d: %s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
+            }
+            out.println();
+        }
+    }
+
+    /**
+     * Displays the list of available commands for the console application.
+     */
+    private void help() {
+        out.println("Commands:");
+        out.println("  show");
+        out.println("  today");
+        out.println("  view-by-deadline");
+        out.println("  add project <project name>");
+        out.println("  add task <project name> <task description>");
+        out.println("  check <task ID>");
+        out.println("  uncheck <task ID>");
+        out.println("  deadline <task ID> <date>");
+        out.println();
+    }
+
+    private void error(String command) {
+        out.printf("I don't know what the command \"%s\" is.", command);
+        out.println();
+    }
 }
