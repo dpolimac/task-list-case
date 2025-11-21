@@ -18,6 +18,7 @@ public class TaskController {
 
     public TaskController(TaskList taskList) {
         this.taskList = taskList;
+        formatter.setLenient(false);
     }
 
     // Endpoints

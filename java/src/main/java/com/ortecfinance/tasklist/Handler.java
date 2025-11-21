@@ -1,6 +1,7 @@
 package com.ortecfinance.tasklist;
 
 import java.io.PrintWriter;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -13,18 +14,21 @@ public class Handler {
     public Handler(TaskList taskList, PrintWriter out) {
         this.taskList = taskList;
         this.out = out;
+        formatter.setLenient(false);
     }
 
     public void execute(String commandLine) {
         String[] commandRest = commandLine.split(" ", 2);
         String command = commandRest[0];
+        String args = commandRest.length > 1 ? commandRest[1] : "";
+
         switch (command) {
             case "show", "today" -> displayHandler(commandRest[0]);
-            case "deadline" -> handleDeadline(commandRest[1]);
+            case "deadline" -> handleDeadline(args);
             case "view-by-deadline" -> viewByDeadline();
-            case "add" -> handleAdd(commandRest[1]);
-            case "check" -> handleCheck(commandRest[1], true);
-            case "uncheck" -> handleCheck(commandRest[1], false);
+            case "add" -> handleAdd(args);
+            case "check" -> handleCheck(args, true);
+            case "uncheck" -> handleCheck(args, false);
             case "help" -> help();
             default -> error(command);
         }
@@ -90,6 +94,7 @@ public class Handler {
     private void handleDeadline(String args) {
         String[] subcommand = args.split(" ", 2);
         int id;
+
         try {
             id = Integer.parseInt(subcommand[0]);
         } catch (NumberFormatException e) {
@@ -99,7 +104,7 @@ public class Handler {
         Date deadline;
         try {
             deadline = formatter.parse(subcommand[1]);
-        } catch (java.text.ParseException e) {
+        } catch (ParseException e) {
             out.println("Invalid deadline format. Expected format: dd-MM-yyyy.");
             throw new RuntimeException(e);
         }
