@@ -13,7 +13,6 @@ public final class TaskList {
         this.projects = new LinkedHashMap<>();
     }
 
-
     /**
      * Adds or updates the deadline for a task with the specified ID.
      *
@@ -53,17 +52,43 @@ public final class TaskList {
      *         and the value is a list containing tasks due today for that project.
      */
     public Map<String, List<Task>> getTodaysTasks() {
+        return getTaskDueOn(new Date());
+    }
+
+    /**
+     * Retrieves a map of tasks grouped by their associated project names where the tasks
+     * are due on a specified date. Only tasks with deadlines matching the given date are included.
+     *
+     * @param day the specific date for which tasks should be retrieved
+     * @return an immutable map where the key is the project name (as a string)
+     *         and the value is a list of tasks due on the specified date for that project
+     */
+    private Map<String, List<Task>> getTaskDueOn(Date day) {
         Map<String, List<Task>> todaysTasks = new LinkedHashMap<>();
-        String today = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        Date today = truncateToDay(day);
         for (Map.Entry<String, List<Task>> project : projects.entrySet()) {
+            List<Task> projectTasks = new ArrayList<>();
             for (Task task : project.getValue()) {
                 Date deadline = task.getDeadline();
-                if (deadline != null && deadline.toString().equals(today)) {
-                    todaysTasks.put(project.getKey(), Collections.singletonList(task));
+                if (deadline != null && truncateToDay(deadline).equals(today)) {
+                    projectTasks.add(task);
                 }
+            }
+            if (!projectTasks.isEmpty()) {
+                todaysTasks.put(project.getKey(), projectTasks);
             }
         }
         return Collections.unmodifiableMap(todaysTasks);
+    }
+
+    private Date truncateToDay(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return cal.getTime();
     }
 
     /**
@@ -150,6 +175,9 @@ public final class TaskList {
      */
     public boolean addTask(String project, String description) {
         List<Task> projectTasks = projects.get(project);
+        if (projectTasks == null) {
+            return false;
+        }
         return projectTasks.add(new Task(nextId(), description, false));
     }
 
